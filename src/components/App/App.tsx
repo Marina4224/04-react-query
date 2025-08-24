@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Toaster } from "react-hot-toast";
+import { useState, useEffect } from "react";
+import { Toaster, toast } from "react-hot-toast";
 import SearchBar from "../SearchBar/SearchBar";
 import MovieGrid from "../MovieGrid/MovieGrid";
 import Loader from "../Loader/Loader";
@@ -20,15 +20,22 @@ export default function App() {
     data,
     isError,
     isLoading,
+    isSuccess,
   } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
-    enabled: query.length > 0, 
+    enabled: query.length > 0,
     placeholderData: keepPreviousData,
   });
 
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
+
+  useEffect(() => {
+    if (isSuccess && movies.length === 0) {
+      toast("No movies found for your request");
+    }
+  }, [isSuccess, movies.length]);
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
@@ -48,9 +55,9 @@ export default function App() {
       <SearchBar onSubmit={handleSearch} />
 
       <main>
-        {isLoading && <Loader />}
+        {query && isLoading && <Loader />}
         {isError && <ErrorMessage />}
-        {!isLoading && !isError && (
+        {isSuccess && movies.length > 0 && (
           <>
             <MovieGrid movies={movies} onSelect={handleSelectMovie} />
             {totalPages > 1 && (
